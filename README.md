@@ -15,5 +15,10 @@
 4
 ![image](https://github.com/gokupwn/EvilGithubIssue/assets/76757267/e93b7077-e5e5-4bf6-a578-d6f502c06176)
 
+## PasteBin Option:
+i will write a good readme file
+
+## Implant Details
+SOON (for now read the code!)
 ## Resources:
 https://www.bleepingcomputer.com/news/security/github-comments-abused-to-push-malware-via-microsoft-repo-urls/#google_vignette
