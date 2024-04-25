@@ -1,3 +1,4 @@
+import gzip
 import shutil
 import signal
 import sys
@@ -29,12 +30,11 @@ AUTHENTICITY_TOKEN = 'YOUR_AUTHENTICITY_TOKEN'
 
 
 def fetchRepoHtml(host, path):
-
-    if PROXY_HOST != '':
+    if PROXY_HOST == '':
+        connection = http.client.HTTPSConnection(host)
+    else:
         connection = http.client.HTTPSConnection(PROXY_HOST, PROXY_PORT)
         connection.set_tunnel(host)
-    else:
-        connection = http.client.HTTPSConnection(host)
 
     headers = {
         'Accept': 'text/html, application/xhtml+xml',
@@ -52,7 +52,12 @@ def fetchRepoHtml(host, path):
     
     connection.request("GET", path, headers=headers)
     response = connection.getresponse()
-    html_response = response.read().decode()
+    if response.getheader('Content-Encoding') == 'gzip':
+        # If the response is gzip-encoded, decode it
+        html_response = gzip.decompress(response.read())
+        html_response = html_response.decode()
+    else:
+        html_response = response.read().decode()
     connection.close()
     return html_response
 
@@ -147,6 +152,13 @@ def getUploadPolicy(repository_id, size):
     # Send the request
     connection.request("POST", "/upload/policies/assets", body=body_bytes, headers=headers)
     response = connection.getresponse()
+
+    if response.getheader('Content-Encoding') == 'gzip':
+        # If the response is gzip-encoded, decode it
+        status = response.status
+        response = gzip.decompress(response.read())
+
+        return status, json.loads(response.decode())
     
     return response.status, json.loads(response.read().decode())
 
@@ -259,6 +271,13 @@ def getUploadLink(request_1_response):
     # Send the request
     connection.request("PUT", f"/upload/repository-files/{request_1_response['asset']['id']}", body=body_bytes, headers=headers)
     response = connection.getresponse()
+    
+    if response.getheader('Content-Encoding') == 'gzip':
+        # If the response is gzip-encoded, decode it
+        status = response.status
+        response = gzip.decompress(response.read())
+
+        return status, json.loads(response.decode())
     
     return response.status, json.loads(response.read().decode())
 

