@@ -24,7 +24,7 @@ python .\githubc2-implant.py
 # can be found in the server.ini file (first_command)
 # !!!Execute the server first!!!! to obtain the first_command
 
-####### You can compil now #######
+####### You can compile now #######
 # compile the C2 Impant
 .\compile_to_exe.bat
 ```
