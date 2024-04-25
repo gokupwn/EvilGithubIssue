@@ -24,6 +24,7 @@ C2_GITHUB_ACCOUNT_COOKIE = 'YOUR_GITHUB_COOKIE'
 C2_CLIENT_USER_AGENT = c2_github_config['github']['c2_client_user_agent']
 PROXY_HOST = c2_github_config['github']['proxy_host']
 PROXY_PORT = int(c2_github_config['github']['proxy_port'])
+AUTHENTICITY_TOKEN = 'YOUR_AUTHENTICITY_TOKEN'
 
 
 
@@ -132,7 +133,7 @@ def getUploadPolicy(repository_id, size):
         f"application/x-zip-compressed\r\n"
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"authenticity_token\"\r\n\r\n"
-        f"peVFfi0B7_rUsgTYzz9LaNpAgsZAswAbeh5l74G5j5VSlZ5uaqzGuO1AqCNIZNoJ8crv-l5RSee0SNviokYrDw\r\n"
+        f"{AUTHENTICITY_TOKEN}\r\n"
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"repository_id\"\r\n\r\n"
         f"{repository_id}\r\n"

