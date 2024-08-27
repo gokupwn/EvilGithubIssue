@@ -35,9 +35,6 @@ python .\githubc2-implant.py
 ##  Illustration:
 
 
-## PasteBin Option:
-i will write a good readme file
-
 ## Implant Details
 SOON (for now read the code!)
 ## Resources:
